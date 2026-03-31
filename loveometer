@@ -1,36 +1,40 @@
-int green_led = 10; //green light pin
-int red_led = 9; //red light pin
-int blue_led = 8; //yellow light pin
+int yellow_led = 2; //green light pin
+int orange_led = 3; //red light pin
+int red_led = 4; //yellow light pin
 int sens_pin = A0; //pin for switch input
-float sensor_volt = (analogRead(sens_pin) / 1024) *5;
-float temp = (sensor_volt - 0.5) * 100;
-int base_temp = 20;
+int base_temp = 26;
+float temp;
+float sensor_volt;
 
 void light_control() {
   if(temp < base_temp){
-    digitalWrite(green_led, LOW);
-    digitalWrite(red_led, LOW);
-    digitalWrite(blue_led, LOW);}
-  if(temp > (base_temp + 2)){
-    digitalWrite(green_led, HIGH);
-    digitalWrite(red_led, LOW);
-    digitalWrite(blue_led, LOW);}
-  if(temp > (base_temp + 4)){
-    digitalWrite(green_led, HIGH);
-    digitalWrite(red_led, HIGH);
-    digitalWrite(blue_led, LOW);}
-  if(temp > (base_temp + 6)){
-    digitalWrite(green_led, HIGH);
-    digitalWrite(red_led, HIGH);
-    digitalWrite(blue_led, HIGH);}
-    delay(1);}
+    for(int i = 2; i < 5; i++)
+    digitalWrite(i, LOW);}
+  else if(temp > (base_temp + 2) && temp < (base_temp + 4)) {
+    digitalWrite(yellow_led, HIGH);
+    digitalWrite(orange_led, LOW);
+    digitalWrite(red_led, LOW);}
+  else if(temp > (base_temp + 4) && temp < (base_temp + 6)) {
+    digitalWrite(yellow_led, HIGH);
+    digitalWrite(orange_led, HIGH);
+    digitalWrite(red_led, LOW);}
+  else if(temp > (base_temp + 6)){
+    for(int i = 2; i < 5; i++)
+    digitalWrite(i, HIGH);
+    delay(250);}}
 
 void setup() {
   // put your setup code here, to run once:
-for(int pin_number = 8; pin_number < 11; pin_number++){
-  pinMode(pin_number, OUTPUT);
-  digitalWrite(pin_number, LOW);}}
+for(int i = 2; i < 5; i++) {
+  pinMode(i, OUTPUT);
+  digitalWrite(i, LOW);}
+pinMode(sens_pin, INPUT);
+Serial.begin(9600);}
 
 void loop() {
   // put your main code here, to run repeatedly:
+sensor_volt = (analogRead(sens_pin) / 1024.0) * 5.0;
+Serial.println(sensor_volt);
+temp = (sensor_volt - 0.5) * 100;
+Serial.println(temp);
 light_control();}
