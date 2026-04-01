@@ -6,9 +6,9 @@ int red_led = 9;
 int green_led = 10;
 int blue_led = 11;
 
-int red_value;
-int green_value;
-int blue_value;
+int red_value = 0;
+int green_value = 0;
+int blue_value = 0;
 
 signed long last_sensor_check = 0;
 int sensor_check_int = 100;
@@ -16,12 +16,20 @@ int sensor_check_int = 100;
 void read_sensor() {
   if(millis() - last_sensor_check > sensor_check_int){
     red_value = (analogRead(red_sensor) / 4);
-    Serial.print("Red Value: " + red_value );
+    Serial.print("Red Value: ");
+    Serial.print(red_value);
     green_value = (analogRead(green_sensor) / 4);
-    Serial.print("Green Value: " + green_value );
+    Serial.print(" Green Value: ");
+    Serial.print(green_value);
     blue_value = (analogRead(blue_sensor) / 4);
-    Serial.println("Blue value: " + blue_value);
+    Serial.print(" Blue value: ");
+    Serial.println(blue_value);
     last_sensor_check = millis();}}
+
+void light_control() {
+  analogWrite(red_led, red_value);
+  analogWrite(green_led, green_value);
+  analogWrite(blue_led, blue_value);}
 
 void set_output_pins() {
   for(int i = 9; i < 12; i ++) {
@@ -32,4 +40,5 @@ void setup() {
   Serial.begin(9600);}
 
 void loop() {
+  light_control();
   read_sensor();}
