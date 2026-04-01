@@ -1,0 +1,35 @@
+int red_sensor = A0;
+int green_sensor = A1;
+int blue_sensor = A2;
+
+int red_led = 9;
+int green_led = 10;
+int blue_led = 11;
+
+int red_value;
+int green_value;
+int blue_value;
+
+signed long last_sensor_check = 0;
+int sensor_check_int = 100;
+
+void read_sensor() {
+  if(millis() - last_sensor_check > sensor_check_int){
+    red_value = (analogRead(red_sensor) / 4);
+    Serial.print("Red Value: " + red_value );
+    green_value = (analogRead(green_sensor) / 4);
+    Serial.print("Green Value: " + green_value );
+    blue_value = (analogRead(blue_sensor) / 4);
+    Serial.println("Blue value: " + blue_value);
+    last_sensor_check = millis();}}
+
+void set_output_pins() {
+  for(int i = 9; i < 12; i ++) {
+    pinMode(i, OUTPUT);}}
+
+void setup() {
+  set_output_pins();
+  Serial.begin(9600);}
+
+void loop() {
+  read_sensor();}
