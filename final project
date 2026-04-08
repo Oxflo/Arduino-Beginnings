@@ -1,0 +1,70 @@
+int motor1_phaseA_pin = 0;
+int motor2_phaseA_pin = 1;
+int motor3_phaseA_pin = 2;
+int motor4_phaseA_pin = 3;
+int motor5_phaseA_pin = 7;
+int motor1_phaseB_pin = 4;
+int motor2_phaseB_pin = 5;
+int motor3_phaseB_pin = 6;
+int motor4_phaseB_pin = 8;
+int motor5_phaseB_pin = 9;
+volatile int motor1_pos;
+volatile int motor2_pos;
+volatile int motor3_pos;
+volatile int motor4_pos;
+volatile int motor5_pos;
+
+void setup() {
+  // put your setup code here, to run once:
+
+attachInterrupt(digitalPinToInterrupt(motor1_phaseA_pin), read_motor1, CHANGE);
+attachInterrupt(digitalPinToInterrupt(motor2_phaseA_pin), read_motor2, CHANGE);
+attachInterrupt(digitalPinToInterrupt(motor3_phaseA_pin), read_motor2, CHANGE);
+attachInterrupt(digitalPinToInterrupt(motor4_phaseA_pin), read_motor2, CHANGE);
+attachInterrupt(digitalPinToInterrupt(motor5_phaseA_pin), read_motor2, CHANGE);
+Serial.begin(9600);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+Serial.print("Motor 1 Position: ")
+Serial.println(motor1_pos);
+Serial.print("Motor 2 Position: ")
+Serial.println(motor2_pos);
+Serial.print("Motor 3 Position: ")
+Serial.println(motor3_pos);
+Serial.print("Motor 4 Position: ")
+Serial.println(motor4_pos);
+Serial.print("Motor 5 Position: ")
+Serial.println(motor5_pos);
+delay(100);}
+
+void read_motor1() {
+  int m1_pA = digitalRead(motor1_phaseA_pin);
+  int m1_pB = digitalRead(motor1_phaseB_pin);
+  if(m1_pA = m1_pB) {motor1_pos ++;}
+  else {motor1_pos --;}}
+
+void read_motor2() {
+  int m2_pA = digitalRead(motor2_phaseA_pin);
+  int m2_pB = digitalRead(motor2_phaseB_pin);
+  if(m2_pA = m2_pB) {motor2_pos ++;}
+  else {motor2_pos --;}}
+
+void read_motor3() {
+  int m3_pA = digitalRead(motor3_phaseA_pin);
+  int m3_pB = digitalRead(motor3_phaseB_pin);
+  if(m3_pA = m3_pB) {motor3_pos ++;}
+  else {motor3_pos --;}}
+
+void read_motor4() {
+  int m4_pA = digitalRead(motor4_phaseA_pin);
+  int m4_pB = digitalRead(motor4_phaseB_pin);
+  if(m4_pA = m4_pB) {motor4_pos ++;}
+  else {motor4_pos --;}}
+
+void read_motor5() {
+  int m5_pA = digitalRead(motor5_phaseA_pin);
+  int m5_pB = digitalRead(motor5_phaseB_pin);
+  if(m5_pA = m5_pB) {motor5_pos ++;}
+  else {motor5_pos --;}}
