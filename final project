@@ -16,7 +16,16 @@ volatile int motor5_pos;
 
 void setup() {
   // put your setup code here, to run once:
-
+pinMode(motor1_phaseA_pin, INPUT);
+pinMode(motor2_phaseA_pin, INPUT);
+pinMode(motor3_phaseA_pin, INPUT);
+pinMode(motor4_phaseA_pin, INPUT);
+pinMode(motor5_phaseA_pin, INPUT);
+pinMode(motor1_phaseB_pin, INPUT);
+pinMode(motor2_phaseB_pin, INPUT);
+pinMode(motor3_phaseB_pin, INPUT);
+pinMode(motor4_phaseB_pin, INPUT);
+pinMode(motor5_phaseB_pin, INPUT);
 attachInterrupt(digitalPinToInterrupt(motor1_phaseA_pin), read_motor1, CHANGE);
 attachInterrupt(digitalPinToInterrupt(motor2_phaseA_pin), read_motor2, CHANGE);
 attachInterrupt(digitalPinToInterrupt(motor3_phaseA_pin), read_motor2, CHANGE);
