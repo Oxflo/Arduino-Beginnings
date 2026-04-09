@@ -1,79 +1,52 @@
-int motor1_phaseA_pin = 0;
-int motor2_phaseA_pin = 1;
-int motor3_phaseA_pin = 2;
-int motor4_phaseA_pin = 3;
-int motor5_phaseA_pin = 7;
-int motor1_phaseB_pin = 4;
-int motor2_phaseB_pin = 5;
-int motor3_phaseB_pin = 6;
-int motor4_phaseB_pin = 8;
-int motor5_phaseB_pin = 9;
-volatile int motor1_pos;
-volatile int motor2_pos;
-volatile int motor3_pos;
-volatile int motor4_pos;
-volatile int motor5_pos;
+const int num_motors = 5;
+int phaseA_pins[num_motors] = {0, 1, 2, 3, 7};
+int phaseB_pins[num_motors] = {4, 5, 6, 8, 9};
+volatile int motor_pos[num_motors];
 
 void setup() {
   // put your setup code here, to run once:
-pinMode(motor1_phaseA_pin, INPUT);
-pinMode(motor2_phaseA_pin, INPUT);
-pinMode(motor3_phaseA_pin, INPUT);
-pinMode(motor4_phaseA_pin, INPUT);
-pinMode(motor5_phaseA_pin, INPUT);
-pinMode(motor1_phaseB_pin, INPUT);
-pinMode(motor2_phaseB_pin, INPUT);
-pinMode(motor3_phaseB_pin, INPUT);
-pinMode(motor4_phaseB_pin, INPUT);
-pinMode(motor5_phaseB_pin, INPUT);
-attachInterrupt(digitalPinToInterrupt(motor1_phaseA_pin), read_motor1, CHANGE);
-attachInterrupt(digitalPinToInterrupt(motor2_phaseA_pin), read_motor2, CHANGE);
-attachInterrupt(digitalPinToInterrupt(motor3_phaseA_pin), read_motor2, CHANGE);
-attachInterrupt(digitalPinToInterrupt(motor4_phaseA_pin), read_motor2, CHANGE);
-attachInterrupt(digitalPinToInterrupt(motor5_phaseA_pin), read_motor2, CHANGE);
+noInterrupts();
+
+for (int i = 0; i < num_motors; i++) {
+  pinMode(phaseA_pins[i], INPUT_PULLUP);
+  pinMode(phaseB_pins[i], INPUT_PULLUP);
+  motor_pos[i] = 0;}
+
 Serial.begin(9600);
+
+attachInterrupt(digitalPinToInterrupt(phaseA_pins[0]), read_motor0, CHANGE);
+attachInterrupt(digitalPinToInterrupt(phaseA_pins[1]), read_motor1, CHANGE);
+attachInterrupt(digitalPinToInterrupt(phaseA_pins[2]), read_motor2, CHANGE);
+attachInterrupt(digitalPinToInterrupt(phaseA_pins[3]), read_motor3, CHANGE);
+attachInterrupt(digitalPinToInterrupt(phaseA_pins[4]), read_motor4, CHANGE);
+
+interrupts();
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-Serial.print("Motor 1 Position: ")
-Serial.println(motor1_pos);
-Serial.print("Motor 2 Position: ")
-Serial.println(motor2_pos);
-Serial.print("Motor 3 Position: ")
-Serial.println(motor3_pos);
-Serial.print("Motor 4 Position: ")
-Serial.println(motor4_pos);
-Serial.print("Motor 5 Position: ")
-Serial.println(motor5_pos);
+for(int i = 0; i < num_motors; i++) {
+  noInterrupts();
+  int pos = motor_pos[i];
+  interrupts();
+  Serial.print("Motor ");
+  Serial.print(i);
+  Serial.print(" position: ");
+  Serial.println(pos);}
 delay(100);}
 
-void read_motor1() {
-  int m1_pA = digitalRead(motor1_phaseA_pin);
-  int m1_pB = digitalRead(motor1_phaseB_pin);
-  if(m1_pA = m1_pB) {motor1_pos ++;}
-  else {motor1_pos --;}}
+void read_motor0() {read_encoder(0);} 
+void read_motor1() {read_encoder(1);}
+void read_motor2() {read_encoder(2);}
+void read_motor3() {read_encoder(3);}
+void read_motor4() {read_encoder(4);}
 
-void read_motor2() {
-  int m2_pA = digitalRead(motor2_phaseA_pin);
-  int m2_pB = digitalRead(motor2_phaseB_pin);
-  if(m2_pA = m2_pB) {motor2_pos ++;}
-  else {motor2_pos --;}}
-
-void read_motor3() {
-  int m3_pA = digitalRead(motor3_phaseA_pin);
-  int m3_pB = digitalRead(motor3_phaseB_pin);
-  if(m3_pA = m3_pB) {motor3_pos ++;}
-  else {motor3_pos --;}}
-
-void read_motor4() {
-  int m4_pA = digitalRead(motor4_phaseA_pin);
-  int m4_pB = digitalRead(motor4_phaseB_pin);
-  if(m4_pA = m4_pB) {motor4_pos ++;}
-  else {motor4_pos --;}}
-
-void read_motor5() {
-  int m5_pA = digitalRead(motor5_phaseA_pin);
-  int m5_pB = digitalRead(motor5_phaseB_pin);
-  if(m5_pA = m5_pB) {motor5_pos ++;}
-  else {motor5_pos --;}}
+void read_encoder(int i) {
+  int pA = digitalRead(phaseA_pins[i]);
+  int pB = digitalRead(phaseB_pins[i]);
+  if(pA == HIGH) {
+    if(pB == HIGH) {motor_pos[i] ++;}
+    else {motor_pos[i] --;}}
+  else {
+    if(pB == LOW) {motor_pos[i] ++;}
+    else {motor_pos[i] --;}}}
