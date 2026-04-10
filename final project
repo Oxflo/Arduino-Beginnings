@@ -26,8 +26,7 @@ attachInterrupt(digitalPinToInterrupt(phaseA_pins[2]), read_motor2, CHANGE);
 attachInterrupt(digitalPinToInterrupt(phaseA_pins[3]), read_motor3, CHANGE);
 attachInterrupt(digitalPinToInterrupt(phaseA_pins[4]), read_motor4, CHANGE);
 
-interrupts();
-}
+interrupts();}
 
 void loop() {
   map_encoders();
