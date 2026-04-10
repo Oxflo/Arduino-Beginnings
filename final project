@@ -1,3 +1,5 @@
+/*Tristan Coles
+This program takes a bunch of inputs and maps them as a game controller in windows 11. It will contain 32 digital buttons, at least 1 8-way hat switch, and 5 analog levers. */
 #include <Joystick.h>
 Joystick_ Joystick;
 
@@ -29,30 +31,20 @@ interrupts();
 
 void loop() {
   // put your main code here, to run repeatedly:
-  for(int i = 0; i < num_motors; i++) {
-    noInterrupts();
-    int pos = motor_pos[i];
-    interrupts();
+  map_encoders();
+  DEBUGa_print_encoder_pos();}
 
-    int mapped = map(pos, -50, 50, 0, 1023);
-    if(i == 0) Joystick.setZAxis(mapped);
-    if(i == 1) Joystick.setRxAxis(mapped);
-    if(i == 2) Joystick.setRyAxis(mapped);
-    if(i == 3) Joystick.setRzAxis(mapped);
-    if(i == 4) Joystick.setThrottle(mapped);
+  
+///////supporting functions///////
 
-    Serial.print("Motor ");
-    Serial.print(i);
-    Serial.print(" position: ");
-    Serial.println(pos);}
-  delay(100);}
-
+ //These functions simply allow the interupts to interact with the read_encoder() functions as the read_encoder() functions rely on a list and the variarable "i" and interupts can't do that to my knowledge.
 void read_motor0() {read_encoder(0);} 
 void read_motor1() {read_encoder(1);}
 void read_motor2() {read_encoder(2);}
 void read_motor3() {read_encoder(3);}
 void read_motor4() {read_encoder(4);}
 
+ //This function does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the motor is moving and then also tracks the amount the motor has rotated.
 void read_encoder(int i) {
   int pA = digitalRead(phaseA_pins[i]);
   int pB = digitalRead(phaseB_pins[i]);
@@ -62,3 +54,30 @@ void read_encoder(int i) {
   else {
     if(pB == LOW) {motor_pos[i] ++;}
     else {motor_pos[i] --;}}}
+
+/*This function takes the motor position and securely stores it in a non_volatile variable to prevent corruption. The map() function does all the math to take the upper and lower limits of the motor (-50 and 50 in this case) and translate them into a full range portentiometer (0 and 1023 in this case).
+The Joystick.setAxis functions takes the mapped output from the map() function and tells windows what axis the input belongs to.*/
+void map_encoders() {
+    for(int i = 0; i < num_motors; i++) {
+    noInterrupts();
+    int pos = motor_pos[i];
+    interrupts();
+
+    int mapped = map(pos, -50, 50, 0, 1023);
+    if(i == 0) Joystick.setZAxis(mapped);
+    if(i == 1) Joystick.setRxAxis(mapped);
+    if(i == 2) Joystick.setRyAxis(mapped);
+    if(i == 3) Joystick.setRzAxis(mapped);
+    if(i == 4) Joystick.setThrottle(mapped);}}
+
+//This function is a debug function that simply displays the current motor positions in the serial monitor. Not very important as you can see the inputs in Windows 11's "Game Controllers --> properties" in real time and this also confirms that windows is seeing the input so it's more useful anyways.
+void DEBUG_print_encoder_pos() {
+  for(int i = 0; i < num_motors; i++) {
+    noInterrupts();
+    int pos = motor_pos[i];
+    interrupts();
+    Serial.print("Motor ");
+    Serial.print(i);
+    Serial.print(" position: ");
+    Serial.println(pos);}
+  delay(1000);}
