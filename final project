@@ -14,8 +14,7 @@ Joystick.begin();
 
 for (int i = 0; i < num_motors; i++) {
   pinMode(phaseA_pins[i], INPUT_PULLUP);
-  pinMode(phaseB_pins[i], INPUT_PULLUP);
-  motor_pos[i] = 0;}
+  pinMode(phaseB_pins[i], INPUT_PULLUP);}
 
 Serial.begin(9600);
 
@@ -30,23 +29,23 @@ interrupts();
 
 void loop() {
   // put your main code here, to run repeatedly:
-for(int i = 0; i < num_motors; i++) {
-  noInterrupts();
-  int pos = motor_pos[i];
-  interrupts();
+  for(int i = 0; i < num_motors; i++) {
+    noInterrupts();
+    int pos = motor_pos[i];
+    interrupts();
 
-  int mapped = map(pos, -50, 50, 0, 1023);
-  if(i == 0) Joystick.setZAxis(mapped);
-  if(i == 1) Joystick.setRxAxis(mapped);
-  if(i == 2) Joystick.setRyAxis(mapped);
-  if(i == 3) Joystick.setRzAxis(mapped);
-  if(i == 4) Joystick.setThrottle(mapped);
+    int mapped = map(pos, -50, 50, 0, 1023);
+    if(i == 0) Joystick.setZAxis(mapped);
+    if(i == 1) Joystick.setRxAxis(mapped);
+    if(i == 2) Joystick.setRyAxis(mapped);
+    if(i == 3) Joystick.setRzAxis(mapped);
+    if(i == 4) Joystick.setThrottle(mapped);
 
-  Serial.print("Motor ");
-  Serial.print(i);
-  Serial.print(" position: ");
-  Serial.println(pos);}
-delay(100);}
+    Serial.print("Motor ");
+    Serial.print(i);
+    Serial.print(" position: ");
+    Serial.println(pos);}
+  delay(100);}
 
 void read_motor0() {read_encoder(0);} 
 void read_motor1() {read_encoder(1);}
