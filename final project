@@ -8,6 +8,13 @@ int phaseA_pins[num_motors] = {0, 1, 2, 3, 7};
 int phaseB_pins[num_motors] = {4, 5, 6, 8, 9};
 volatile int motor_pos[num_motors];
 int status_report[2] = {0,1000};
+int button_coll[4];
+int button_row[8];
+int clk = 13;
+int dt = 12;
+int sw = 11;
+int pA_last_state;
+
 
 void setup() {
 noInterrupts();
@@ -26,11 +33,16 @@ attachInterrupt(digitalPinToInterrupt(phaseA_pins[2]), read_motor2, CHANGE);
 attachInterrupt(digitalPinToInterrupt(phaseA_pins[3]), read_motor3, CHANGE);
 attachInterrupt(digitalPinToInterrupt(phaseA_pins[4]), read_motor4, CHANGE);
 
-interrupts();}
+interrupts();
+
+pinMode(clk, INPUT);
+pinMode(sw, INPUT);
+pinMode(dt, INPUT);}
 
 void loop() {
   map_encoders();
-  DEBUG_print_encoder_pos();}
+  DEBUG_print_encoder_pos();
+  rotary_encoder();}
 
   
 ///////supporting functions///////
@@ -70,7 +82,7 @@ void map_encoders() {
 
 //This function is a debug function that simply displays the current motor positions in the serial monitor. Not very important as you can see the inputs in Windows 11's "Game Controllers --> properties" in real time and this also confirms that windows is seeing the input so it's more useful anyways.
 void DEBUG_print_encoder_pos() {
-  if(millis() - status_report[0] > status_report[1]){
+  if(millis() - status_report[1] > status_report[0]){
     for(int i = 0; i < num_motors; i++) {
       noInterrupts();
       int pos = motor_pos[i];
@@ -80,3 +92,29 @@ void DEBUG_print_encoder_pos() {
       Serial.print(" position: ");
       Serial.println(pos);}
     status_report[0] = millis();}}
+
+void rotary_encoder() {
+  int button_pressed = !digitalRead(sw);
+  int pA = !digitalRead(dt);
+  int pB = !digitalRead(clk);
+  int encoder_L_time;
+  int encoder_R_time;
+
+  Joystick.setButton(0, button_pressed);
+
+  if(pA_last_state == LOW && pA != pA_last_state) {
+      if(pB == pA_last_state){
+        Joystick.pressButton(1);
+        encoder_L_time = millis();}
+      else{
+        Joystick.pressButton(2);
+        encoder_R_time;}}
+
+  if(millis() - encoder_L_time > 25) {Joystick.releaseButton(1);}
+  if(millis() - encoder_R_time > 25) {Joystick.releaseButton(2);}
+
+  pA_last_state = pA;
+
+  Joystick.setButton(3, pA);
+  Joystick.setButton(4, pB);
+  Joystick.setButton(5, pA_last_state);}
