@@ -1,61 +1,97 @@
 /*Tristan Coles
-This program takes a bunch of inputs and maps them as a game controller in windows 11. It will contain 32 digital buttons, at least 1 8-way hat switch, and 5 analog levers. */
+This program takes a bunch of inputs and maps them as a game controller in windows. It will contain 32 digital buttons, at least 1 8-way hat switch, 5 analog levers, and 6 rotary encoders when it is fully finished. */
 #include <Joystick.h>
 Joystick_ Joystick;
 
-//varaiable for motors
+
+///////Global Variable///////
+
+//varaiables for motor tracking
 const int num_motors = 5;
-int motor_phaseA_pins[num_motors] = {14, 16, 18, 20, 22};
-int motor_phaseB_pins[num_motors] = {15, 17, 19, 21, 23};
+int motor_phaseA_pins[num_motors] = {22, 24, 26, 28, 30};
+int motor_phaseB_pins[num_motors] = {23, 25, 27, 29, 31};
 volatile int motor_pos[num_motors];}
+
+//variables for motor PWM outputs
+const int num_PWM = 5;
+int motor_PWM_pins[num_PWM] = {2, 3, 4, 5, 6};
+int motor_direction_pins[num_PWM] = {14, 15, 16, 17, 18};
 
 //variables for rotary encoders
 const int num_enc = 6;
-int enc_phaseA_pins[num_enc] = {24, 26, 28, 30, 32, 34};
-int enc_phaseB_pins[num_enc] = {25, 27, 29, 31, 33, 35};
+int enc_phaseA_pins[num_enc] = {32, 34, 36, 38, 40, 42};
+int enc_phaseB_pins[num_enc] = {33, 35, 37, 39, 41, 43};
 unsigned long encoder_L_time[num_enc];
 unsigned long encoder_R_time[num_enc];
 
-//variables for motor PWM outputs
-int motor_PWM_pins[num_motors] = {9, 10, 11, 12, 13};
-int motor_direction_pins[num_motors] = {36, 37, 38, 39, 40}
+//variables for button matrix
+const int num_rows = 5;
+const int num_coll = 5;
+int button_rows[num_rows] = {44, 46, 48. 50. 52};
+int button_colls[num_coll] = {45, 47, 49, 51, 53};
+
+/*variables for "hat switch" which is actually going to be two 2P 2T switches with on/off/on configurations to allow for the 9 positions a hatswitch wouldgive you but in the format that I want.*/
+const int num_switches = 2;
+int switch_one[2] = {A8, A9};
+int switch_two[2] = {A10, A11};
 
 
+///////Setup///////
 void setup() {
-noInterrupts();
 
-Joystick.begin();
+  noInterrupts();
 
-for(int i = 14; i < 36; i++) {pinMode(i, INPUT_PULLUP);}
-for(int i = 9; i < 14; i++) {pinMode(i, OIUTPUT);}
-for(int i = 36; i < 41; i++) {pinMode(i, OUTPUT);}
+  Joystick.begin();
+
+  //sets motors tracking pins as inputs
+  for(int i = 0; i < num_motors; i ++){
+    pinMode(motor_phaseA_pins[i], INPUT_PULLUP);
+    pinMode(motor_phaseB_pins[i]), INPUT_PULLUP);}
+  
+  //sets motor pwm and direction signal pins as output
+  for(int i = 0; i < num_PWM; i++){
+    pinMode(motor_PWM_pins[i]), OUTPUT);
+    pinMode(motor_direction_pins[i]), OUTPUT);}
+
+  //set rotary encoder pins as inputs
+  for(int i = 0; i < num_enc; i ++){
+    pinMode(enc_phaseA_pins[i]), INPUT_PULLUP);
+    pinMode(enc_phaseB_pins[i]), INPUT_PULLUP);}
+
+  //sets rows for button matrix as input and collumns as output
+  for(int i = 0; i < num_rows; i ++){pinMode(button_rows[i], INPUT_PULLUP);}
+  for(int i = 0; i < num_coll; i ++){pinMode(button_colls[i], OUTPUT);}
+
+  //sets the "hatchswitch" pins as input
+  for(int i = 0; i < num_switches; i ++){
+    pinMode(switch_one[i], INPUT_PULLUP);
+    pinMode(switch_two[i], INPUT_PULLUP)}}
+  
+  //adds interupts to all rotary encoders. The motors are set to trigger on change of state on one pin to increase accuracy while the manual encoders are set to trigger on rise to create one pulse per click.
+  attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[0]), read_motor0, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[1]), read_motor1, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[2]), read_motor2, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[3]), read_motor3, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[4]), read_motor4, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[0]), read_rot_enc0, RISING);
+  attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[1]), read_rot_enc1, RISING);
+  attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[2]), read_rot_enc2, RISING);
+  attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[3]), read_rot_enc3, RISING);
+  attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[4]), read_rot_enc4, RISING);
+  attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[5]), read_rot_enc5, RISING);
+  interrupts();}
 
 
-attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[0]), read_motor0, CHANGE);
-attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[1]), read_motor1, CHANGE);
-attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[2]), read_motor2, CHANGE);
-attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[3]), read_motor3, CHANGE);
-attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[4]), read_motor4, CHANGE);
-attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[0]), read_rot_enc0, RISING);
-attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[1]), read_rot_enc1, RISING);
-attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[2]), read_rot_enc2, RISING);
-attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[3]), read_rot_enc3, RISING);
-attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[4]), read_rot_enc4, RISING);
-attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[5]), read_rot_enc5, RISING);
-
-interrupts();}
-
-
+///////loop///////
 
 void loop() {
   map_encoders();
   read_rotary_encoder();
   button_thing();}
-
   
 ///////supporting functions///////
 
- //These functions simply allow the interupts to interact with the read_encoder() functions as the read_encoder() functions rely on a list and the variarable "i" and interupts can't do that to my knowledge.
+ //These functions simply allow the interupts to interact with the read_encoder() functions as the read_encoder() functions rely on a list and for() loop and interupts can't directly ouput variable arguments to my knowledge.
 void read_motor0() {read_encoder(0);} 
 void read_motor1() {read_encoder(1);}
 void read_motor2() {read_encoder(2);}
@@ -68,7 +104,7 @@ void read_rot_enc0() {read_rot_enc(6);}
 void read_rot_enc0() {read_rot_enc(8);}
 void read_rot_enc0() {read_rot_enc(10);}
 
- //This function does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the motor is moving and then also tracks the amount the motor has rotated.
+ //This function does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the motor is moving and then also tracks the amount the motor has rotated and stores it in a global variable.
 void read_encoder(int i) {
   int pA = !digitalRead(motor_phaseA_pins[i]);
   int pB = !digitalRead(motor_phaseA_pins[i]);
@@ -79,8 +115,8 @@ void read_encoder(int i) {
     if(pB == LOW) {motor_pos[i] ++;}
     else {motor_pos[i] --;}}}
 
-/*This function takes the motor position and securely stores it in a non_volatile variable to prevent corruption. The map() function does all the math to take the upper and lower limits of the motor (-50 and 50 in this case) and translate them into a full range portentiometer (0 and 1023 in this case).
-The Joystick.setAxis functions takes the mapped output from the map() function and tells windows what axis the input belongs to.*/
+/*This function securely stores the motor position "motor_pos" in a non-volatile, local variable "pos" to prevent corruption. The map() function from the Joystick library does all the math to take the upper and lower limits of the motor (-10 and 10 in this case)
+and translate them into a full analog range (0 and 1023 in this case).The Joystick.setAxis() functions takes the mapped output from the map() function and tells windows what axis the input belongs to.*/
 void map_encoders() {
     for(int i = 0; i < num_motors; i++) {
     noInterrupts();
@@ -88,16 +124,29 @@ void map_encoders() {
     interrupts();
 
     int mapped = map(pos, -10, 10, 0, 1023);
-    if(i == 0) Joystick.setZAxis(mapped);
-    if(i == 1) Joystick.setRxAxis(mapped);
-    if(i == 2) Joystick.setRyAxis(mapped);
-    if(i == 3) Joystick.setRzAxis(mapped);
-    if(i == 4) Joystick.setThrottle(mapped);}}
+    switch(i){
+      case(0):
+        Joystick.setZAxis(mapped);
+        break;
+      case(1):
+        Joystick.setRxAxis(mapped);
+        break;
+      case(2);
+        Joystick.setRyAxis(mapped);
+        break;
+      case(3):
+        Joystick.setRzAxis(mapped);
+        break;
+      case(4):
+        Joystick.setThrottle(mapped);
+        break;}}}
 
-//This function read the left and right rotation features of the rotary encoders and give a pulse for either direction. The "position" of the dial is not tracked and simply gives a pulse when the knob is turned.
+/*This function, much like read_encoder(), does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the oncoder is being spun. Unlike the read_encoder() function it does not store the position of the encoder and instead
+turns the encoder pulses into a short ouput pulse similar to a momentary button being pressed and released*/
 void read_rot_enc(int i) {
   int epA = !digitalRead(enc_phaseA_pins[i]);
   int epB = !digitalRead(enc_phaseB_pins[i]);
+  int pulse_length = 25;
 
   if(epB == epA){
     Joystick.pressButton(i);
@@ -106,9 +155,10 @@ void read_rot_enc(int i) {
     Joystick.pressButton(i + 1);
     encoder_R_time[i] = millis();}
 
-  if(millis() - encoder_L_time[i] > 25) {Joystick.releaseButton(1);}
-  if(millis() - encoder_R_time[i] > 25) {Joystick.releaseButton(2);}}
+  if(millis() - encoder_L_time[i] > pulse_length) {Joystick.releaseButton(1);}
+  if(millis() - encoder_R_time[i] > pulse_length) {Joystick.releaseButton(2);}}
 
+//This function is just a placeholder to ensure the push button on the rotary encoder was wired up and functioning correctly. The push button on the rotary encoders will be part of the button matrix in the future.
 void button_thing() {
   int button_pressed = !digitalRead(sw);
   Joystick.setButton(12, button_pressed);}
