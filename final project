@@ -1,9 +1,9 @@
 /*This program takes a bunch of inputs and maps them as a game controller in windows. I'm shooting for 32 digital buttons, at least 1 8-way hat switch, 5 analog levers, and 6 rotary encoders when it is fully finished. */
 
 /////////////////////////////Libraries/////////////////////////////
+
 #include <Joystick.h>
 Joystick_ Joystick;
-
 
 /////////////////////////////Global Variables/////////////////////////////
 
@@ -36,8 +36,8 @@ const int num_switches = 2;
 int switch_one[2] = {A8, A9};
 int switch_two[2] = {A10, A11};
 
-
 /////////////////////////////Setup/////////////////////////////
+
 void setup() {
 
   noInterrupts();
@@ -81,7 +81,6 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[4]), read_rot_enc4, RISING);
   attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[5]), read_rot_enc5, RISING);
   interrupts();}
-
 
 /////////////////////////////Loop/////////////////////////////
 
