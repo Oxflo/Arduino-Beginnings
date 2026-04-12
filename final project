@@ -1,4 +1,11 @@
-/*This program takes a bunch of inputs and maps them as a game controller in windows. I'm shooting for 32 digital buttons, at least 1 8-way hat switch, 5 analog levers, and 6 rotary encoders when it is fully finished. */
+/*This program takes a bunch of inputs and maps them as a game controller in windows. I'm shooting for 25 digital buttons, at least 1 8-way hat switch, 5 analog levers, and 6 rotary encoders when it is fully finished. */
+
+/*         to do list
+program and assemble button matrix
+program and assemble motor controllers
+program and assemble hat switch
+design and assemble box
+*/
 
 /////////////////////////////Libraries/////////////////////////////
 
@@ -98,11 +105,11 @@ void read_motor2() {read_encoder(2);}
 void read_motor3() {read_encoder(3);}
 void read_motor4() {read_encoder(4);}
 void read_rot_enc0() {read_rot_enc(0);}
-void read_rot_enc0() {read_rot_enc(2);}
-void read_rot_enc0() {read_rot_enc(4);}
-void read_rot_enc0() {read_rot_enc(6);}
-void read_rot_enc0() {read_rot_enc(8);}
-void read_rot_enc0() {read_rot_enc(10);}
+void read_rot_enc1() {read_rot_enc(2);}
+void read_rot_enc2() {read_rot_enc(4);}
+void read_rot_enc3() {read_rot_enc(6);}
+void read_rot_enc4() {read_rot_enc(8);}
+void read_rot_enc5() {read_rot_enc(10);}
 
  //This function does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the motor is moving and then also tracks the amount the motor has rotated and stores it in a global variable.
 void read_encoder(int i) {
