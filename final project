@@ -3,17 +3,22 @@ This program takes a bunch of inputs and maps them as a game controller in windo
 #include <Joystick.h>
 Joystick_ Joystick;
 
+//varaiable for motors
 const int num_motors = 5;
-int phaseA_pins[num_motors] = {0, 1, 2, 3, 7};
-int phaseB_pins[num_motors] = {4, 5, 6, 8, 9};
-volatile int motor_pos[num_motors];
-int status_report[2] = {0,1000};
-int button_coll[4];
-int button_row[8];
-int clk = 13;
-int dt = 12;
-int sw = 11;
-int pA_last_state;
+int motor_phaseA_pins[num_motors] = {14, 16, 18, 20, 22};
+int motor_phaseB_pins[num_motors] = {15, 17, 19, 21, 23};
+volatile int motor_pos[num_motors];}
+
+//variables for rotary encoders
+const int num_enc = 6;
+int enc_phaseA_pins[num_enc] = {24, 26, 28, 30, 32, 34};
+int enc_phaseB_pins[num_enc] = {25, 27, 29, 31, 33, 35};
+unsigned long encoder_L_time[num_enc];
+unsigned long encoder_R_time[num_enc];
+
+//variables for motor PWM outputs
+int motor_PWM_pins[num_motors] = {9, 10, 11, 12, 13};
+int motor_direction_pins[num_motors] = {36, 37, 38, 39, 40}
 
 
 void setup() {
@@ -21,28 +26,31 @@ noInterrupts();
 
 Joystick.begin();
 
-for (int i = 0; i < num_motors; i++) {
-  pinMode(phaseA_pins[i], INPUT_PULLUP);
-  pinMode(phaseB_pins[i], INPUT_PULLUP);}
+for(int i = 14; i < 36; i++) {pinMode(i, INPUT_PULLUP);}
+for(int i = 9; i < 14; i++) {pinMode(i, OIUTPUT);}
+for(int i = 36; i < 41; i++) {pinMode(i, OUTPUT);}
 
-Serial.begin(9600);
 
-attachInterrupt(digitalPinToInterrupt(phaseA_pins[0]), read_motor0, CHANGE);
-attachInterrupt(digitalPinToInterrupt(phaseA_pins[1]), read_motor1, CHANGE);
-attachInterrupt(digitalPinToInterrupt(phaseA_pins[2]), read_motor2, CHANGE);
-attachInterrupt(digitalPinToInterrupt(phaseA_pins[3]), read_motor3, CHANGE);
-attachInterrupt(digitalPinToInterrupt(phaseA_pins[4]), read_motor4, CHANGE);
+attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[0]), read_motor0, CHANGE);
+attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[1]), read_motor1, CHANGE);
+attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[2]), read_motor2, CHANGE);
+attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[3]), read_motor3, CHANGE);
+attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[4]), read_motor4, CHANGE);
+attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[0]), read_rot_enc0, RISING);
+attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[1]), read_rot_enc1, RISING);
+attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[2]), read_rot_enc2, RISING);
+attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[3]), read_rot_enc3, RISING);
+attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[4]), read_rot_enc4, RISING);
+attachInterrupt(digitalPinToInterrupt(enc_phaseA_pins[5]), read_rot_enc5, RISING);
 
-interrupts();
+interrupts();}
 
-pinMode(clk, INPUT);
-pinMode(sw, INPUT);
-pinMode(dt, INPUT);}
+
 
 void loop() {
   map_encoders();
-  DEBUG_print_encoder_pos();
-  rotary_encoder();}
+  read_rotary_encoder();
+  button_thing();}
 
   
 ///////supporting functions///////
@@ -53,11 +61,17 @@ void read_motor1() {read_encoder(1);}
 void read_motor2() {read_encoder(2);}
 void read_motor3() {read_encoder(3);}
 void read_motor4() {read_encoder(4);}
+void read_rot_enc0() {read_rot_enc(0);}
+void read_rot_enc0() {read_rot_enc(2);}
+void read_rot_enc0() {read_rot_enc(4);}
+void read_rot_enc0() {read_rot_enc(6);}
+void read_rot_enc0() {read_rot_enc(8);}
+void read_rot_enc0() {read_rot_enc(10);}
 
  //This function does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the motor is moving and then also tracks the amount the motor has rotated.
 void read_encoder(int i) {
-  int pA = digitalRead(phaseA_pins[i]);
-  int pB = digitalRead(phaseB_pins[i]);
+  int pA = !digitalRead(motor_phaseA_pins[i]);
+  int pB = !digitalRead(motor_phaseA_pins[i]);
   if(pA == HIGH) {
     if(pB == HIGH) {motor_pos[i] ++;}
     else {motor_pos[i] --;}}
@@ -73,48 +87,28 @@ void map_encoders() {
     int pos = motor_pos[i];
     interrupts();
 
-    int mapped = map(pos, -50, 50, 0, 1023);
+    int mapped = map(pos, -10, 10, 0, 1023);
     if(i == 0) Joystick.setZAxis(mapped);
     if(i == 1) Joystick.setRxAxis(mapped);
     if(i == 2) Joystick.setRyAxis(mapped);
     if(i == 3) Joystick.setRzAxis(mapped);
     if(i == 4) Joystick.setThrottle(mapped);}}
 
-//This function is a debug function that simply displays the current motor positions in the serial monitor. Not very important as you can see the inputs in Windows 11's "Game Controllers --> properties" in real time and this also confirms that windows is seeing the input so it's more useful anyways.
-void DEBUG_print_encoder_pos() {
-  if(millis() - status_report[1] > status_report[0]){
-    for(int i = 0; i < num_motors; i++) {
-      noInterrupts();
-      int pos = motor_pos[i];
-      interrupts();
-      Serial.print("Motor ");
-      Serial.print(i);
-      Serial.print(" position: ");
-      Serial.println(pos);}
-    status_report[0] = millis();}}
+//This function read the left and right rotation features of the rotary encoders and give a pulse for either direction. The "position" of the dial is not tracked and simply gives a pulse when the knob is turned.
+void read_rot_enc(int i) {
+  int epA = !digitalRead(enc_phaseA_pins[i]);
+  int epB = !digitalRead(enc_phaseB_pins[i]);
 
-void rotary_encoder() {
+  if(epB == epA){
+    Joystick.pressButton(i);
+    encoder_L_time[i] = millis();}
+  else{
+    Joystick.pressButton(i + 1);
+    encoder_R_time[i] = millis();}
+
+  if(millis() - encoder_L_time[i] > 25) {Joystick.releaseButton(1);}
+  if(millis() - encoder_R_time[i] > 25) {Joystick.releaseButton(2);}}
+
+void button_thing() {
   int button_pressed = !digitalRead(sw);
-  int pA = !digitalRead(dt);
-  int pB = !digitalRead(clk);
-  int encoder_L_time;
-  int encoder_R_time;
-
-  Joystick.setButton(0, button_pressed);
-
-  if(pA_last_state == LOW && pA != pA_last_state) {
-      if(pB == pA_last_state){
-        Joystick.pressButton(1);
-        encoder_L_time = millis();}
-      else{
-        Joystick.pressButton(2);
-        encoder_R_time;}}
-
-  if(millis() - encoder_L_time > 25) {Joystick.releaseButton(1);}
-  if(millis() - encoder_R_time > 25) {Joystick.releaseButton(2);}
-
-  pA_last_state = pA;
-
-  Joystick.setButton(3, pA);
-  Joystick.setButton(4, pB);
-  Joystick.setButton(5, pA_last_state);}
+  Joystick.setButton(12, button_pressed);}
