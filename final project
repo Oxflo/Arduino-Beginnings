@@ -1,10 +1,11 @@
-/*Tristan Coles
-This program takes a bunch of inputs and maps them as a game controller in windows. It will contain 32 digital buttons, at least 1 8-way hat switch, 5 analog levers, and 6 rotary encoders when it is fully finished. */
+/*This program takes a bunch of inputs and maps them as a game controller in windows. I'm shooting for 32 digital buttons, at least 1 8-way hat switch, 5 analog levers, and 6 rotary encoders when it is fully finished. */
+
+/////////////////////////////Libraries/////////////////////////////
 #include <Joystick.h>
 Joystick_ Joystick;
 
 
-///////Global Variable///////
+/////////////////////////////Global Variables/////////////////////////////
 
 //varaiables for motor tracking
 const int num_motors = 5;
@@ -36,7 +37,7 @@ int switch_one[2] = {A8, A9};
 int switch_two[2] = {A10, A11};
 
 
-///////Setup///////
+/////////////////////////////Setup/////////////////////////////
 void setup() {
 
   noInterrupts();
@@ -82,14 +83,14 @@ void setup() {
   interrupts();}
 
 
-///////loop///////
+/////////////////////////////Loop/////////////////////////////
 
 void loop() {
   map_encoders();
   read_rotary_encoder();
   button_thing();}
   
-///////supporting functions///////
+/////////////////////////////Supporting Functions/////////////////////////////
 
  //These functions simply allow the interupts to interact with the read_encoder() functions as the read_encoder() functions rely on a list and for() loop and interupts can't directly ouput variable arguments to my knowledge.
 void read_motor0() {read_encoder(0);} 
