@@ -1,6 +1,6 @@
-/*This program takes a bunch of inputs and maps them as a game controller in windows. I'm shooting for 25 digital buttons, at least 1 8-way hat switch, 5 analog levers, and 6 rotary encoders when it is fully finished. */
+/*This program takes a bunch of inputs and maps them as a game controller in windows. I'm shooting for 25 digital buttons, at least 1 8-way hat switch, 5 analog levers, and 6 rotary encoders when it is fully finished.
 
-/*         to do list
+          to do list
 program and assemble button matrix
 program and assemble motor controllers
 program and assemble hat switch
@@ -8,6 +8,8 @@ design and assemble box
 
 optional things that might not get done before the project is due:
 program a neat little self_zeroing routine that the levers do on startup
+
+/////////////////////////////github links to libraries for furutre reference/////////////////////////////
 
 https://github.com/mheironimus/arduinojoysticklibrary
 https://github.com/Chris--A/Keypad/blob/master/examples/CustomKeypad/CustomKeypad.ino
@@ -40,15 +42,15 @@ unsigned long encoder_L_time[num_enc];
 unsigned long encoder_R_time[num_enc];
 
 //variables for button matrix
-const byte num_rows = 5;
-const byte num_coll = 4;
-int matrix_switch_arguments[ROWS][COLS] = {
+const int num_rows = 5;
+const int num_coll = 4;
+int matrix_switch_arguments[num_rows][num_coll] = {
   {0, 1, 2, 3},
   {4, 5, 6, 7},
   {8, 9, 10, 11},
   {12, 13, 14, 15},
-  {17, 18, 19, 20}};
-int button_rows[num_rows] = {44, 46, 48. 50. 52};
+  {16, 17, 18, 19}};
+int button_rows[num_rows] = {44, 46, 48, 50, 52};
 int button_colls[num_coll] = {45, 47, 49, 51};
 Keypad button_matrix = Keypad(makeKeymap(matrix_switch_arguments), button_rows, button_colls, num_rows, num_coll);
 
@@ -139,28 +141,28 @@ void read_encoder(int i) {
 /*This function securely stores the motor position "motor_pos" in a non-volatile, local variable "pos" to prevent corruption. The map() function from the Joystick library does all the math to take the upper and lower limits of the motor (-10 and 10 in this case)
 and translate them into a full analog range (0 and 1023 in this case).The Joystick.setAxis() functions takes the mapped output from the map() function and tells windows what axis the input belongs to.*/
 void map_encoders() {
-    for(int i = 0; i < num_motors; i++) {
-    noInterrupts();
-    int pos = motor_pos[i];
-    interrupts();
+  for(int i = 0; i < num_motors; i++) {
+  noInterrupts();
+  int pos = motor_pos[i];
+  interrupts();
 
-    int mapped = map(pos, -10, 10, 0, 1023);
-    switch(i){
-      case(0):
-        Joystick.setZAxis(mapped);
-        break;
-      case(1):
-        Joystick.setRxAxis(mapped);
-        break;
-      case(2);
-        Joystick.setRyAxis(mapped);
-        break;
-      case(3):
-        Joystick.setRzAxis(mapped);
-        break;
-      case(4):
-        Joystick.setThrottle(mapped);
-        break;}}}
+  int mapped = map(pos, -10, 10, 0, 1023);
+  switch(i){
+    case(0):
+      Joystick.setZAxis(mapped);
+      break;
+    case(1):
+      Joystick.setRxAxis(mapped);
+      break;
+    case(2);
+      Joystick.setRyAxis(mapped);
+      break;
+    case(3):
+      Joystick.setRzAxis(mapped);
+      break;
+    case(4):
+      Joystick.setThrottle(mapped);
+      break;}}}
 
 /*This function, much like read_encoder(), does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the oncoder is being spun. Unlike the read_encoder() function it does not store the position of the encoder and instead
 turns the encoder pulses into a short ouput pulse similar to a momentary button being pressed and released*/
@@ -187,4 +189,4 @@ void button_thing() {
 void button_matrix() {
   int custom_key = button_matrix.getkey();
   int mapped_button = custom_key + 18;
-  Joystick.setButton(mapped_button, 1);}
+  Joystick.setButton(mapped_button);}
