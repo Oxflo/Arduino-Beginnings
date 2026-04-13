@@ -5,12 +5,19 @@ program and assemble button matrix
 program and assemble motor controllers
 program and assemble hat switch
 design and assemble box
+
+optional things that might not get done before the project is due:
+program a neat little self_zeroing routine that the levers do on startup
+
+https://github.com/mheironimus/arduinojoysticklibrary
+https://github.com/Chris--A/Keypad/blob/master/examples/CustomKeypad/CustomKeypad.ino
 */
 
 /////////////////////////////Libraries/////////////////////////////
 
 #include <Joystick.h>
 Joystick_ Joystick;
+#include <Keypad.h>
 
 /////////////////////////////Global Variables/////////////////////////////
 
@@ -33,10 +40,17 @@ unsigned long encoder_L_time[num_enc];
 unsigned long encoder_R_time[num_enc];
 
 //variables for button matrix
-const int num_rows = 5;
-const int num_coll = 5;
+const byte num_rows = 5;
+const byte num_coll = 4;
+int matrix_switch_arguments[ROWS][COLS] = {
+  {0, 1, 2, 3},
+  {4, 5, 6, 7},
+  {8, 9, 10, 11},
+  {12, 13, 14, 15},
+  {17, 18, 19, 20}};
 int button_rows[num_rows] = {44, 46, 48. 50. 52};
-int button_colls[num_coll] = {45, 47, 49, 51, 53};
+int button_colls[num_coll] = {45, 47, 49, 51};
+Keypad button_matrix = Keypad(makeKeymap(matrix_switch_arguments), button_rows, button_colls, num_rows, num_coll);
 
 /*variables for "hat switch" which is actually going to be two 2P 2T switches with on/off/on configurations to allow for the 9 positions a hatswitch wouldgive you but in the format that I want.*/
 const int num_switches = 2;
@@ -98,7 +112,7 @@ void loop() {
   
 /////////////////////////////Supporting Functions/////////////////////////////
 
- //These functions simply allow the interupts to interact with the read_encoder() functions as the read_encoder() functions rely on a list and for() loop and interupts can't directly ouput variable arguments to my knowledge.
+//These functions simply allow the interupts to interact with the read_encoder() functions as the read_encoder() functions rely on a list and for() loop and interupts can't directly ouput variable arguments to my knowledge.
 void read_motor0() {read_encoder(0);} 
 void read_motor1() {read_encoder(1);}
 void read_motor2() {read_encoder(2);}
@@ -111,7 +125,7 @@ void read_rot_enc3() {read_rot_enc(6);}
 void read_rot_enc4() {read_rot_enc(8);}
 void read_rot_enc5() {read_rot_enc(10);}
 
- //This function does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the motor is moving and then also tracks the amount the motor has rotated and stores it in a global variable.
+//This function does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the motor is moving and then also tracks the amount the motor has rotated and stores it in a global variable.
 void read_encoder(int i) {
   int pA = !digitalRead(motor_phaseA_pins[i]);
   int pB = !digitalRead(motor_phaseA_pins[i]);
@@ -169,3 +183,8 @@ void read_rot_enc(int i) {
 void button_thing() {
   int button_pressed = !digitalRead(sw);
   Joystick.setButton(12, button_pressed);}
+
+void button_matrix() {
+  int custom_key = button_matrix.getkey();
+  int mapped_button = custom_key + 18;
+  Joystick.setButton(mapped_button, 1);}
