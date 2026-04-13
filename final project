@@ -188,5 +188,6 @@ void button_thing() {
 
 void button_matrix() {
   int custom_key = button_matrix.getkey();
-  int mapped_button = custom_key + 18;
-  Joystick.setButton(mapped_button);}
+  if(custom_key){
+    int mapped_button = custom_key + 18;
+    Joystick.setButton(mapped_button);}}
