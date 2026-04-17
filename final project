@@ -197,4 +197,3 @@ if(button_matrix.getKeys()) {
 
       if(button_matrix.key[i].kstate == PRESSED) {Joystick.setButton(button, 1);}
       else if(button_matrix.key[i].kstate == RELEASED) {Joystick.setButton(button, 0);}}}}}
-}
