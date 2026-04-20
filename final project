@@ -1,13 +1,12 @@
 /*This program takes a bunch of inputs and maps them as a game controller in windows. I'm shooting for 25 digital buttons, at least 1 8-way hat switch, 5 analog levers, and 6 rotary encoders when it is fully finished.
 
-          to do list
-program and assemble button matrix
+/////////////////////////////to do list/////////////////////////////
 program and assemble motor controllers
-program and assemble hat switch
+program rot_enc push buttons
+assemble push buttons
+assemble button matrix
+assemble hat switch
 design and assemble box
-
-optional things that might not get done before the project is due:
-program a neat little self_zeroing routine that the levers do on startup
 
 /////////////////////////////github links to libraries for furutre reference/////////////////////////////
 
@@ -24,10 +23,10 @@ https://github.com/Chris--A/Keypad/blob/master/examples/CustomKeypad/CustomKeypa
 
 Joystick_ Joystick(JOYSTICK_DEFAULT_REPORT_ID,
                    JOYSTICK_TYPE_GAMEPAD,
-                   32, 1,   // 32 buttons, 1 hat switches
+                   32, 1,   // 32 buttons 14 push buttons 6 push buttons on rotary encoders and left and right on each of the 6 rotary encoders, 1 hat switches
                    true, true, true,  // X, Y, Z
-                   false, false, false,  // Rx, Ry, Rz
-                   true, true,         // rudder, throttle
+                   true, true, false,  // Rx, Ry, Rz
+                   false, false,         // rudder, throttle
                    false, false, false); // accelerator, brake, steering
 
 /////////////////////////////Global Variables/////////////////////////////
@@ -45,6 +44,7 @@ const int num_enc = 6;
 int enc_phaseA_pins[num_enc] = {32, 34, 36, 38, 40, 42};
 int enc_phaseB_pins[num_enc] = {33, 35, 37, 39, 41, 43};
 int enc_button_pins[num_enc] = {44, 45, 46, 47, 48, 49};
+int enc_last_state[num_enc];
 
 //variables for button matrix
 const byte num_rows = 4;
@@ -69,6 +69,8 @@ int hat_right = A11;
 
 void setup() {
 
+  Serial.begin(9600);
+
   noInterrupts();
 
   Joystick.begin();
@@ -91,14 +93,15 @@ void setup() {
 
   //sets rows for button matrix as input and collumns as output
   for(int i = 0; i < num_rows; i ++){pinMode(row_pins[i], INPUT_PULLUP);}
-  for(int i = 0; i < num_coll; i ++){pinMode(coll_pins[i], OUTPUT);}
+  for(int i = 0; i < num_coll; i ++) {
+    pinMode(coll_pins[i], OUTPUT);
+    digitalWrite(coll_pins[i], HIGH);}
 
   //sets the "hatchswitch" pins as input
-  for(int i = 0; i < num_switches; i ++){
-    pinMode(hat_up, INPUT_PULLUP);
-    pinMode(hat_down, INPUT_PULLUP);
-    pinMode(hat_left, INPUT_PULLUP);
-    pinMode(hat_right, INPUT_PULLUP);}
+  pinMode(hat_up, INPUT_PULLUP);
+  pinMode(hat_down, INPUT_PULLUP);
+  pinMode(hat_left, INPUT_PULLUP);
+  pinMode(hat_right, INPUT_PULLUP);
   
   //adds interupts for the motor rotorary encoder to very accurately track their position.
   attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[0]), read_motor0, CHANGE);
@@ -111,9 +114,13 @@ void setup() {
 /////////////////////////////Loop/////////////////////////////
 
 void loop() {
-  map_encoders();
-  matrix_inputs();
-  hat_inputs();}
+  map_encoders(); // need to reconfirm with motor drivers programmed but as of now confirmed functional
+
+  read_rot_enc(); //confirmed functional
+
+  matrix_inputs(); //confirmed functional
+
+  hat_inputs();} //confirmed functional
   
 /////////////////////////////Supporting Functions/////////////////////////////
 
@@ -155,10 +162,10 @@ void map_encoders() {
       Joystick.setZAxis(mapped);
       break;
     case(3):
-      Joystick.setRudder(mapped);
+      Joystick.setRxAxis(mapped);
       break;
     case(4):
-      Joystick.setThrottle(mapped);
+      Joystick.setRyAxis(mapped);
       break;}}}
 
 /*This function, much like read_encoder(), does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the oncoder is being spun. Unlike the read_encoder() function it does not store the position of the encoder and instead
@@ -170,24 +177,25 @@ void read_rot_enc() {
     int rotate_left = i * 2 + 20;
     int rotate_right = i * 2 + 21;
 
-    if(epA != LOW) {
-      if(epA == epB){Joystick.pressButton(rotate_left);}
-      else {Joystick.pressButton(rotate_right);}}
-    else{
+  if (epA != enc_last_state[i]) {
+    if (epA == HIGH) {
+      (epA == epB) ? Joystick.pressButton(rotate_left)
+                   : Joystick.pressButton(rotate_right);}
+    else {
       Joystick.releaseButton(rotate_left);
-      Joystick.releaseButton(rotate_right);}}}
+      Joystick.releaseButton(rotate_right);}
+    enc_last_state[i] = epA;}}}
 
 void matrix_inputs() {
-if(button_matrix.getKeys()) {
-  for(int i = 0; i < LIST_MAX; i++){
-    if(button_matrix.key[i].stateChanged) {
-      int button = button_matrix.key[i].kchar;
-
-      if(button_matrix.key[i].kstate == PRESSED) {Joystick.setButton(button, 1);}
-      else if(button_matrix.key[i].kstate == RELEASED) {Joystick.setButton(button, 0);}}}}}
+  if (button_matrix.getKeys()) {
+    for (int i = 0; i < LIST_MAX; i++) {
+      if (button_matrix.key[i].stateChanged) {
+        int button = button_matrix.key[i].kcode;
+        if (button_matrix.key[i].kstate == PRESSED) {Joystick.setButton(button, 1);}
+        else if (button_matrix.key[i].kstate == RELEASED) {Joystick.setButton(button, 0);}}}}}
 
 void hat_inputs() {
-  int hat = -1;
+  int hat;
   bool up = !digitalRead(hat_up);
   bool down = !digitalRead(hat_down);
   bool left = !digitalRead(hat_left);
@@ -203,5 +211,6 @@ void hat_inputs() {
       else {hat = 180;}}
   else if(right) {hat = 90;}
   else if(left) {hat = 270;}
+  else {hat = -1;}
 
   Joystick.setHatSwitch(0, hat);}
