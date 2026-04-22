@@ -18,6 +18,7 @@ https://github.com/Chris--A/Keypad/blob/master/examples/CustomKeypad/CustomKeypa
 
 #include <Joystick.h>
 #include <Keypad.h>
+#include <SparkFun_TB6612.h>
 
 /////////////////////////////Joystick setup/////////////////////////////
 
@@ -34,10 +35,14 @@ Joystick_ Joystick(JOYSTICK_DEFAULT_REPORT_ID,
 //varaiables for motors
 const int num_motors = 5;
 int motor_PWM_pins[num_motors] = {2, 3, 4, 5, 6};
-int motor_direction_pins[num_motors] = {14, 15, 16, 17, 18};
+int motor_direction1_pins[num_motors] = {14, 15, 16, 17, 18};
+int motor_direction2_pins[num_motors] = {9, 10, 11, 12, 13};
 int motor_phaseA_pins[num_motors] = {22, 24, 26, 28, 30};
 int motor_phaseB_pins[num_motors] = {23, 25, 27, 29, 31};
+int motor[num_motors];
 volatile int motor_pos[num_motors];
+const int offset = 1;
+const int STBY_pin = 8;
 
 //variables for rotary encoders
 const int num_enc = 6;
@@ -83,7 +88,11 @@ void setup() {
   //sets motor pwm and direction signal pins as output
   for(int i = 0; i < num_motors; i++){
     pinMode(motor_PWM_pins[i], OUTPUT);
-    pinMode(motor_direction_pins[i], OUTPUT);}
+    pinMode(motor_direction1_pins[i], OUTPUT);
+    pinMode(motor_direction2_pins[i], OUTPUT);}
+
+  for(int i = 0; i < num_motors; i++){
+    Motor motor[i] = Motor(motor_direction1_pins[i], motor_direction2_pins[i], motor_PWM_pins[i], offset, STBY_pin)}
 
   //set rotary encoder pins as inputs
   for(int i = 0; i < num_enc; i ++){
