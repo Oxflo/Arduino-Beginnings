@@ -1,8 +1,7 @@
-/*This program takes a bunch of inputs and maps them as a game controller in windows. I'm shooting for 25 digital buttons, at least 1 8-way hat switch, 5 analog levers, and 6 rotary encoders when it is fully finished.
+/*This program takes a bunch of inputs and maps them as a game controller in windows. It has 16 buttons, 1 8-way hat switch in the form of 2 on/off/on switches, 5 analog levers in the form of motors, and 6 rotary encoders.
 
 /////////////////////////////to do list/////////////////////////////
-program and assemble motor controllers
-program rot_enc push buttons
+assemble motors
 assemble push buttons
 assemble button matrix
 assemble hat switch
@@ -18,7 +17,6 @@ https://github.com/Chris--A/Keypad/blob/master/examples/CustomKeypad/CustomKeypa
 
 #include <Joystick.h>
 #include <Keypad.h>
-#include <SparkFun_TB6612.h>
 
 /////////////////////////////Joystick setup/////////////////////////////
 
@@ -39,17 +37,15 @@ int motor_direction1_pins[num_motors] = {14, 15, 16, 17, 18};
 int motor_direction2_pins[num_motors] = {9, 10, 11, 12, 13};
 int motor_phaseA_pins[num_motors] = {22, 24, 26, 28, 30};
 int motor_phaseB_pins[num_motors] = {23, 25, 27, 29, 31};
-int motor[num_motors];
 volatile int motor_pos[num_motors];
-const int offset = 1;
 const int STBY_pin = 8;
 
 //variables for rotary encoders
 const int num_enc = 6;
 int enc_phaseA_pins[num_enc] = {32, 34, 36, 38, 40, 42};
 int enc_phaseB_pins[num_enc] = {33, 35, 37, 39, 41, 43};
-int enc_button_pins[num_enc] = {44, 45, 46, 47, 48, 49};
 int enc_last_state[num_enc];
+int enc_button_pins[num_enc] = {44, 45, 46, 47, 48, 49};
 
 //variables for button matrix
 const byte num_rows = 4;
@@ -80,19 +76,18 @@ void setup() {
 
   Joystick.begin();
 
-  //sets motors tracking pins as inputs
+  //sets motor tracking pins as inputs
   for(int i = 0; i < num_motors; i ++){
     pinMode(motor_phaseA_pins[i], INPUT_PULLUP);
     pinMode(motor_phaseB_pins[i], INPUT_PULLUP);}
   
-  //sets motor pwm and direction signal pins as output
+  //sets motor pwm and direction signal pins as output and the standby pin as a high ouput to start the motor controller
   for(int i = 0; i < num_motors; i++){
     pinMode(motor_PWM_pins[i], OUTPUT);
     pinMode(motor_direction1_pins[i], OUTPUT);
-    pinMode(motor_direction2_pins[i], OUTPUT);}
-
-  for(int i = 0; i < num_motors; i++){
-    Motor motor[i] = Motor(motor_direction1_pins[i], motor_direction2_pins[i], motor_PWM_pins[i], offset, STBY_pin)}
+    pinMode(motor_direction2_pins[i], OUTPUT);
+    pinMode(STBY_pin, OUTPUT);
+    digitalWrite(STBY_pin, HIGH);}
 
   //set rotary encoder pins as inputs
   for(int i = 0; i < num_enc; i ++){
@@ -123,7 +118,9 @@ void setup() {
 /////////////////////////////Loop/////////////////////////////
 
 void loop() {
-  map_encoders(); // need to reconfirm with motor drivers programmed but as of now confirmed functional
+  map_motor_encoders(); //need to reconfirm with motor drivers programmed but as of now confirmed functional
+
+  drive_motors(); //needs tested with motor controller hooked up
 
   read_rot_enc(); //confirmed functional
 
@@ -133,15 +130,17 @@ void loop() {
   
 /////////////////////////////Supporting Functions/////////////////////////////
 
-//These functions simply allow the interupts to interact with the read_encoder() functions as the read_encoder() functions rely on a list and for() loop and interupts can't directly ouput variable arguments to my knowledge.
-void read_motor0() {read_encoder(0);} 
-void read_motor1() {read_encoder(1);}
-void read_motor2() {read_encoder(2);}
-void read_motor3() {read_encoder(3);}
-void read_motor4() {read_encoder(4);}
+/* These functions simply allow the interupts to interact with the read_encoder() functions as the read_encoder() functions rely on an array and for() loop but the way my interrupts are setup, they can't directly call
+these functions themselves. */
+void read_motor0() {read_motor_encoder(0);} 
+void read_motor1() {read_motor_encoder(1);}
+void read_motor2() {read_motor_encoder(2);}
+void read_motor3() {read_motor_encoder(3);}
+void read_motor4() {read_motor_encoder(4);}
 
-//This function does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the motor is moving and then also tracks the amount the motor has rotated and stores it in a global variable.
-void read_encoder(int i) {
+/* This function does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the motor is moving and then also tracks the amount the motor has rotated and stores it in a global
+variable. */
+void read_motor_encoder(int i) {
   int pA = !digitalRead(motor_phaseA_pins[i]);
   int pB = !digitalRead(motor_phaseB_pins[i]);
   if(pA == HIGH) {
@@ -149,11 +148,13 @@ void read_encoder(int i) {
     else {motor_pos[i] --;}}
   else {
     if(pB == LOW) {motor_pos[i] ++;}
-    else {motor_pos[i] --;}}}
+    else {motor_pos[i] --;}}
+}
 
-/*This function securely stores the motor position "motor_pos" in a non-volatile, local variable "pos" to prevent corruption. The map() function from the Joystick library does all the math to take the upper and lower limits of the motor (-10 and 10 in this case)
-and translate them into a full analog range (0 and 1023 in this case).The Joystick.setAxis() functions takes the mapped output from the map() function and tells windows what axis the input belongs to.*/
-void map_encoders() {
+/* This function disables interrupts, stores "motor_pos" in a non-volatile, local variable "pos", and then re-endables interrupts to prevent corruption. The map() function from the Joystick library does all the math to
+take the virtual upper and lower limits of the motor (-10 and 10 in this case) and translate them into an analog range (0 and 1023 in this case). The Joystick.set(whatever_axis)Axis() function then takes the mapped
+output from the map() function and sets the virtual axis to match the motor's physical position. */
+void map_motor_encoders() {
   for(int i = 0; i < num_motors; i++) {
   noInterrupts();
   int pos = motor_pos[i];
@@ -175,10 +176,28 @@ void map_encoders() {
       break;
     case(4):
       Joystick.setRyAxis(mapped);
-      break;}}}
+      break;}}
+}
 
-/*This function, much like read_encoder(), does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the oncoder is being spun. Unlike the read_encoder() function it does not store the position of the encoder and instead
-turns the encoder pulses into a short ouput pulse similar to a momentary button being pressed and released*/
+// This function checks the current physical position of the motors and applies a torque back towards the 0 position.
+void drive_motor() {
+  for (int i = 0; i < num_motors; i++) {
+    if (motor_pos[i] < 0) {
+      digitalWrite(motor_direction1_pins[i], HIGH);
+      digitalWrite(motor_direction2_pins[i], LOW);
+      analogWrite(motor_PWM_pins[i], 51);}
+    if (motor_pos[i] > 0) {
+      digitalWrite(motor_direction1_pins[i], LOW);
+      digitalWrite(motor_direction2_pins[i], HIGH);
+      analogWrite(motor_PWM_pins[i], 51);}
+    else {
+      digitalWrite(motor_direction1_pins[i], LOW);
+      digitalWrite(motor_direction2_pins[i], LOW);
+      analogWrite(motor_PWM_pins[i], 00);}}
+}
+
+/* This function, much like read_encoder(), does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the oncoder is being spun. Unlike the read_encoder() function it does not
+store the position of the encoder and instead turns the encoder pulses into a short ouput pulse similar to a momentary button being pressed and released. */
 void read_rot_enc() {
   for (int i  = 0; i < num_enc; i++){
     int epA = !digitalRead(enc_phaseA_pins[i]);
@@ -193,16 +212,30 @@ void read_rot_enc() {
     else {
       Joystick.releaseButton(rotate_left);
       Joystick.releaseButton(rotate_right);}
-    enc_last_state[i] = epA;}}}
+    enc_last_state[i] = epA;}}
+}
 
+// This function reads the state of the physical push buttons on the rotary encoders and sets the virtual button to match that state.
+void rot_enc_push_buttons() {
+  for (int i = 0; i < num_enc; i++) {
+    bool current_state = !digitalRead(enc_button_pins[i]);
+    int current_button = i + 14;
+
+    Joystick.setButton(current_button, current_state)}
+}
+
+/* This function compares the previous state and current state of every physical button on the box, stores all the buttons that have changed into an array, and then the changes the state of the vitual button in windows
+to match the current state of the physical button in that array. */
 void matrix_inputs() {
   if (button_matrix.getKeys()) {
     for (int i = 0; i < LIST_MAX; i++) {
       if (button_matrix.key[i].stateChanged) {
         int button = button_matrix.key[i].kcode;
-        if (button_matrix.key[i].kstate == PRESSED) {Joystick.setButton(button, 1);}
-        else if (button_matrix.key[i].kstate == RELEASED) {Joystick.setButton(button, 0);}}}}}
+        if (button_matrix.key[i].kstate == PRESSED) {Joystick.pressButton(button);}
+        else if (button_matrix.key[i].kstate == RELEASED) {Joystick.pressButton(button);}}}}
+}
 
+//This function takes inputs from the 2 physical on/off/on switches and outputs them as a virtual hat switch.
 void hat_inputs() {
   int hat;
   bool up = !digitalRead(hat_up);
@@ -222,4 +255,5 @@ void hat_inputs() {
   else if(left) {hat = 270;}
   else {hat = -1;}
 
-  Joystick.setHatSwitch(0, hat);}
+  Joystick.setHatSwitch(0, hat);
+}
