@@ -61,10 +61,10 @@ Keypad button_matrix = Keypad(makeKeymap(matrix_switch_arguments), row_pins, col
 
 /*variables for "hat switch" which is actually going to be two 2P 2T switches with on/off/on configurations to allow for the 9 positions a hatswitch wouldgive you but in the format that I want.*/
 const int num_switches = 2;
-int hat_up = A8;
-int hat_down = A9;
-int hat_left = A10;
-int hat_right = A11;
+int hat_up[num_switches] = {A8, 50};
+int hat_down[num_switches] = {A9, 51};
+int hat_left[num_switches] = {A10, 52};
+int hat_right[num_switches] = {A11, 53};
 
 /////////////////////////////Setup/////////////////////////////
 
@@ -102,10 +102,11 @@ void setup() {
     digitalWrite(coll_pins[i], HIGH);}
 
   //sets the "hatchswitch" pins as input
-  pinMode(hat_up, INPUT_PULLUP);
-  pinMode(hat_down, INPUT_PULLUP);
-  pinMode(hat_left, INPUT_PULLUP);
-  pinMode(hat_right, INPUT_PULLUP);
+  for (int i = 0; i < num_switches; i++){
+    pinMode(hat_up[i], INPUT_PULLUP);
+    pinMode(hat_down[i], INPUT_PULLUP);
+    pinMode(hat_left[i], INPUT_PULLUP);
+    pinMode(hat_right[i], INPUT_PULLUP);}
   
   //adds interupts for the motor rotorary encoder to very accurately track their position.
   attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[0]), read_motor0, CHANGE);
@@ -123,6 +124,8 @@ void loop() {
   drive_motors(); //needs tested with motor controller hooked up
 
   read_rot_enc(); //confirmed functional
+
+  rot_enc_push_buttons(); //confirmed functional
 
   matrix_inputs(); //confirmed functional
 
@@ -180,7 +183,7 @@ void map_motor_encoders() {
 }
 
 // This function checks the current physical position of the motors and applies a torque back towards the 0 position.
-void drive_motor() {
+void drive_motors() {
   for (int i = 0; i < num_motors; i++) {
     if (motor_pos[i] < 0) {
       digitalWrite(motor_direction1_pins[i], HIGH);
@@ -193,7 +196,7 @@ void drive_motor() {
     else {
       digitalWrite(motor_direction1_pins[i], LOW);
       digitalWrite(motor_direction2_pins[i], LOW);
-      analogWrite(motor_PWM_pins[i], 00);}}
+      analogWrite(motor_PWM_pins[i], 0);}}
 }
 
 /* This function, much like read_encoder(), does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the oncoder is being spun. Unlike the read_encoder() function it does not
@@ -221,7 +224,7 @@ void rot_enc_push_buttons() {
     bool current_state = !digitalRead(enc_button_pins[i]);
     int current_button = i + 14;
 
-    Joystick.setButton(current_button, current_state)}
+    Joystick.setButton(current_button, current_state);}
 }
 
 /* This function compares the previous state and current state of every physical button on the box, stores all the buttons that have changed into an array, and then the changes the state of the vitual button in windows
@@ -237,23 +240,24 @@ void matrix_inputs() {
 
 //This function takes inputs from the 2 physical on/off/on switches and outputs them as a virtual hat switch.
 void hat_inputs() {
-  int hat;
-  bool up = !digitalRead(hat_up);
-  bool down = !digitalRead(hat_down);
-  bool left = !digitalRead(hat_left);
-  bool right = !digitalRead(hat_right);
+  for (int i = 0; i < num_switches; i++){
+    int hat;
+    bool up = !digitalRead(hat_up[i]);
+    bool down = !digitalRead(hat_down[i]);
+    bool left = !digitalRead(hat_left[i]);
+    bool right = !digitalRead(hat_right[i]);
 
-  if(up) {
-    if(right) {hat = 45;}
-      else if(left) {hat = 315;}
-      else {hat = 0;}}
-  else if(down) {
-    if(right) {hat = 135;}
-      else if(left) {hat = 225;}
-      else {hat = 180;}}
-  else if(right) {hat = 90;}
-  else if(left) {hat = 270;}
-  else {hat = -1;}
+    if(up) {
+      if(right) {hat = 45;}
+        else if(left) {hat = 315;}
+        else {hat = 0;}}
+    else if(down) {
+      if(right) {hat = 135;}
+        else if(left) {hat = 225;}
+        else {hat = 180;}}
+    else if(right) {hat = 90;}
+    else if(left) {hat = 270;}
+    else {hat = -1;}
 
-  Joystick.setHatSwitch(0, hat);
+    Joystick.setHatSwitch(i, hat);}
 }
