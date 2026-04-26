@@ -38,7 +38,6 @@ int motor_direction2_pins[num_motors] = {9, 10, 11, 12, 13};
 int motor_phaseA_pins[num_motors] = {22, 24, 26, 28, 30};
 int motor_phaseB_pins[num_motors] = {23, 25, 27, 29, 31};
 volatile int motor_pos[num_motors];
-const int STBY_pin = 8;
 
 //variables for rotary encoders
 const int num_enc = 6;
