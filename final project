@@ -38,6 +38,8 @@ int motor_direction2_pins[num_motors] = {8, 9, 10, 11, 12, 13};
 int motor_phaseA_pins[num_motors] = {20, 22, 24, 26, 28, 30};
 int motor_phaseB_pins[num_motors] = {21, 23, 25, 27, 29, 31};
 volatile int motor_pos[num_motors];
+int motor_range_min[num_motors] = {0};
+int motor_range_max[num_motors] = {0};
 
 //variables for rotary encoders
 const int num_enc = 6;
@@ -58,7 +60,7 @@ byte row_pins[num_rows] = {A0, A1, A2, A3};
 byte coll_pins[num_coll] = {A4, A5, A6, A7};
 Keypad button_matrix = Keypad(makeKeymap(matrix_switch_arguments), row_pins, coll_pins, num_rows, num_coll);
 
-/*variables for "hat switch" which is actually going to be two 2P 2T switches with on/off/on configurations to allow for the 9 positions a hatswitch wouldgive you but in the format that I want.*/
+/*variables for hat switches which are actually going to be two on/off/on switches to allow for the 9 positions a hatswitch would give you but in the format that I want.*/
 const int num_switches = 2;
 int hat_up[num_switches] = {A8, 50};
 int hat_down[num_switches] = {A9, 51};
@@ -68,8 +70,6 @@ int hat_right[num_switches] = {A11, 53};
 /////////////////////////////Setup/////////////////////////////
 
 void setup() {
-
-  Serial.begin(9600);
 
   noInterrupts();
 
@@ -98,14 +98,16 @@ void setup() {
     pinMode(coll_pins[i], OUTPUT);
     digitalWrite(coll_pins[i], LOW);}
 
-  //sets the "hatchswitch" pins as input
+  //sets the hat switch pins as input
   for (int i = 0; i < num_switches; i++){
     pinMode(hat_up[i], INPUT_PULLUP);
     pinMode(hat_down[i], INPUT_PULLUP);
     pinMode(hat_left[i], INPUT_PULLUP);
     pinMode(hat_right[i], INPUT_PULLUP);}
+
+  establish_motor_ranges();
   
-  //adds interupts for the motor rotorary encoder to very accurately track their position.
+  //adds interupts for the motor rotorary encoder to accurately track their movement as they are being moved rather than after the fact.
   attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[0]), read_motor0, CHANGE);
   attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[1]), read_motor1, CHANGE);
   attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[2]), read_motor2, CHANGE);
@@ -117,9 +119,9 @@ void setup() {
 /////////////////////////////Loop/////////////////////////////
 
 void loop() {
-  map_motor_encoders(); //need to reconfirm with motor drivers programmed but as of now confirmed functional
+  map_motor_encoders(); //confirmed functional
 
-  drive_motors(); //needs tested with motor controller hooked up
+  drive_motors(); //needs tested
 
   read_rot_enc(); //confirmed functional
 
@@ -131,7 +133,7 @@ void loop() {
   
 /////////////////////////////Supporting Functions/////////////////////////////
 
-/* These functions simply allow the interupts to interact with the read_encoder() functions as the read_encoder() functions rely on an array and for() loop but the way my interrupts are setup, they can't directly call
+/* These functions simply allow the interupts to interact with the `read_encoder()` functions as the `read_encoder()` functions rely on an array and `for()` loop but the way my interrupts are setup, they can't directly call
 these functions themselves. */
 void read_motor0() {read_motor_encoder(0);} 
 void read_motor1() {read_motor_encoder(1);}
@@ -153,16 +155,37 @@ void read_motor_encoder(int i) {
     else {motor_pos[i] --;}}
 }
 
-/* This function disables interrupts, stores "motor_pos" in a non-volatile, local variable "pos", and then re-endables interrupts to prevent corruption. The map() function from the Joystick library does all the math to
-take the virtual upper and lower limits of the motor (-10 and 10 in this case) and translate them into an analog range (0 and 1023 in this case). The Joystick.set(whatever_axis)Axis() function then takes the mapped
-output from the map() function and sets the virtual axis to match the motor's physical position. */
+// This function runs at setup to determine the upper and lower physical bounds of each motor
+void establish_motor_ranges() {
+  int motor_last_position;
+  for (int i = 0; i < num_motors; i++) {
+    while (motor_range_min[i] == 0){
+      motor_last_position = motor_pos[i];
+      digitalWrite(motor_direction1_pins[i], HIGH);
+      digitalWrite(motor_direction2_pins[i], LOW);
+      analogWrite(motor_PWM_pins[i], 51);
+      read_motor_encoder(i);
+      if (motor_pos[i] == motor_last_position) {motor_range_min[i] = motor_position[i];}}
+    while (motor_range_max[i] == 0) {
+      motor_last_position = motor_pos[i];
+      digitalWrite(motor_direction1_pins[i], LOW);
+      digitalWrite(motor_direction2_pins[i], HIGH);
+      analogWrite(motor_PWM_pins[i], 51);
+      read_motor_encoder(i);
+      if (motor_pos[i] == motor_last_position) {motor_range_max[i] = motor_position[i];}}
+    while (motor_pos[i] != 0) {drive_motors();}}
+}
+
+/* This function disables interrupts, stores `motor_pos` in a non-volatile, local variable `pos`, and then re-endables interrupts to prevent corruption. The `map()` function from the Joystick library does all the math to
+take the virtual upper and lower limits of the motor (defined at startup from physical bounds) and translate them into an analog range (0 and 1023 in this case). The `Joystick.set(whatever_axis)Axis()` function then takes the mapped
+output from the `map()` function and sets the virtual axis to match the motor's physical position. */
 void map_motor_encoders() {
   for(int i = 0; i < num_motors; i++) {
   noInterrupts();
   int pos = motor_pos[i];
   interrupts();
 
-  int mapped = map(pos, -750, 750, 0, 1023);
+  int mapped = map(pos, motor_range_min[i], motor_range_max[i], 0, 1023);
   switch(i){
     case(0):
       Joystick.setXAxis(mapped);
@@ -198,7 +221,7 @@ void drive_motors() {
       analogWrite(motor_PWM_pins[i], 0);}}
 }
 
-/* This function, much like read_encoder(), does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the oncoder is being spun. Unlike the read_encoder() function it does not
+/* This function, much like `read_encoder()`, does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the oncoder is being spun. Unlike the `read_encoder()` function it does not
 store the position of the encoder and instead turns the encoder pulses into a short ouput pulse similar to a momentary button being pressed and released. */
 void read_rot_enc() {
   for (int i  = 0; i < num_enc; i++){
