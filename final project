@@ -1,4 +1,4 @@
-/*This program takes a bunch of inputs and maps them as a game controller in windows. It has 16 buttons, 1 8-way hat switch in the form of 2 on/off/on switches, 5 analog levers in the form of motors, and 6 rotary encoders.
+/*This program takes a bunch of inputs and maps them as a game controller in windows. It has 16 buttons, 2 8-way hat switches in the form of 2 on/off/on switches, 6 analog levers in the form of motors, and 6 rotary encoders.
 
 /////////////////////////////to do list/////////////////////////////
 assemble motors
@@ -31,12 +31,12 @@ Joystick_ Joystick(JOYSTICK_DEFAULT_REPORT_ID,
 /////////////////////////////Global Variables/////////////////////////////
 
 //varaiables for motors
-const int num_motors = 5;
-int motor_PWM_pins[num_motors] = {2, 3, 4, 5, 6};
-int motor_direction1_pins[num_motors] = {14, 15, 16, 17, 18};
-int motor_direction2_pins[num_motors] = {9, 10, 11, 12, 13};
-int motor_phaseA_pins[num_motors] = {22, 24, 26, 28, 30};
-int motor_phaseB_pins[num_motors] = {23, 25, 27, 29, 31};
+const int num_motors = 6;
+int motor_PWM_pins[num_motors] = {2, 3, 4, 5, 6, 7};
+int motor_direction1_pins[num_motors] = {14, 15, 16, 17, 18, 19};
+int motor_direction2_pins[num_motors] = {8, 9, 10, 11, 12, 13};
+int motor_phaseA_pins[num_motors] = {20, 22, 24, 26, 28, 30};
+int motor_phaseB_pins[num_motors] = {21, 23, 25, 27, 29, 31};
 volatile int motor_pos[num_motors];
 
 //variables for rotary encoders
@@ -80,13 +80,11 @@ void setup() {
     pinMode(motor_phaseA_pins[i], INPUT_PULLUP);
     pinMode(motor_phaseB_pins[i], INPUT_PULLUP);}
   
-  //sets motor pwm and direction signal pins as output and the standby pin as a high ouput to start the motor controller
+  //sets motor pwm and direction signal pins as output
   for(int i = 0; i < num_motors; i++){
     pinMode(motor_PWM_pins[i], OUTPUT);
     pinMode(motor_direction1_pins[i], OUTPUT);
-    pinMode(motor_direction2_pins[i], OUTPUT);
-    pinMode(STBY_pin, OUTPUT);
-    digitalWrite(STBY_pin, HIGH);}
+    pinMode(motor_direction2_pins[i], OUTPUT);}
 
   //set rotary encoder pins as inputs
   for(int i = 0; i < num_enc; i ++){
@@ -98,7 +96,7 @@ void setup() {
   for(int i = 0; i < num_rows; i ++){pinMode(row_pins[i], INPUT_PULLUP);}
   for(int i = 0; i < num_coll; i ++) {
     pinMode(coll_pins[i], OUTPUT);
-    digitalWrite(coll_pins[i], HIGH);}
+    digitalWrite(coll_pins[i], LOW);}
 
   //sets the "hatchswitch" pins as input
   for (int i = 0; i < num_switches; i++){
@@ -113,6 +111,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[2]), read_motor2, CHANGE);
   attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[3]), read_motor3, CHANGE);
   attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[4]), read_motor4, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[5]), read_motor5, CHANGE);
   interrupts();}
 
 /////////////////////////////Loop/////////////////////////////
@@ -139,6 +138,7 @@ void read_motor1() {read_motor_encoder(1);}
 void read_motor2() {read_motor_encoder(2);}
 void read_motor3() {read_motor_encoder(3);}
 void read_motor4() {read_motor_encoder(4);}
+void read_motor5() {read_motor_encoder(5);}
 
 /* This function does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the motor is moving and then also tracks the amount the motor has rotated and stores it in a global
 variable. */
@@ -162,7 +162,7 @@ void map_motor_encoders() {
   int pos = motor_pos[i];
   interrupts();
 
-  int mapped = map(pos, -10, 10, 0, 1023);
+  int mapped = map(pos, -750, 750, 0, 1023);
   switch(i){
     case(0):
       Joystick.setXAxis(mapped);
@@ -234,7 +234,7 @@ void matrix_inputs() {
       if (button_matrix.key[i].stateChanged) {
         int button = button_matrix.key[i].kcode;
         if (button_matrix.key[i].kstate == PRESSED) {Joystick.pressButton(button);}
-        else if (button_matrix.key[i].kstate == RELEASED) {Joystick.pressButton(button);}}}}
+        else if (button_matrix.key[i].kstate == RELEASED) {Joystick.releaseButton(button);}}}}
 }
 
 //This function takes inputs from the 2 physical on/off/on switches and outputs them as a virtual hat switch.
