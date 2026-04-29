@@ -22,7 +22,7 @@ https://github.com/Chris--A/Keypad/blob/master/examples/CustomKeypad/CustomKeypa
 
 Joystick_ Joystick(JOYSTICK_DEFAULT_REPORT_ID,
                    JOYSTICK_TYPE_GAMEPAD,
-                   32, 1,   // 32 buttons 14 push buttons 6 push buttons on rotary encoders and left and right on each of the 6 rotary encoders, 1 hat switches
+                   32, 2,   // 32 buttons 14 push buttons 6 push buttons on rotary encoders and left and right on each of the 6 rotary encoders, 2 hat switches
                    true, true, true,  // X, Y, Z
                    true, true, false,  // Rx, Ry, Rz
                    false, false,         // rudder, throttle
