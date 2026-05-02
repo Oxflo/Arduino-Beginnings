@@ -1,4 +1,4 @@
-/*This program takes a bunch of inputs and maps them as a game controller in windows. It has 16 buttons, 2 8-way hat switches in the form of 2 on/off/on switches, 6 analog levers in the form of motors, and 6 rotary encoders.
+*This program takes a bunch of inputs and maps them as a game controller in windows. It has 16 buttons, 2 8-way hat switches in the form of 2 on/off/on switches, 6 analog levers in the form of motors, and 6 rotary encoders.
 
 /////////////////////////////to do list/////////////////////////////
 assemble motors
@@ -104,8 +104,6 @@ void setup() {
     pinMode(hat_down[i], INPUT_PULLUP);
     pinMode(hat_left[i], INPUT_PULLUP);
     pinMode(hat_right[i], INPUT_PULLUP);}
-
-  establish_motor_ranges();
   
   //adds interupts for the motor rotorary encoder to accurately track their movement as they are being moved rather than after the fact.
   attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[0]), read_motor0, CHANGE);
@@ -114,6 +112,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[3]), read_motor3, CHANGE);
   attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[4]), read_motor4, CHANGE);
   attachInterrupt(digitalPinToInterrupt(motor_phaseA_pins[5]), read_motor5, CHANGE);
+
   interrupts();}
 
 /////////////////////////////Loop/////////////////////////////
@@ -158,21 +157,28 @@ void read_motor_encoder(int i) {
 // This function runs at setup to determine the upper and lower physical bounds of each motor
 void establish_motor_ranges() {
   int motor_last_position;
+  int read_min = 0;
+  int read_max = 0;
+  int initial_offset;
   for (int i = 0; i < num_motors; i++) {
-    while (motor_range_min[i] == 0){
+    while (read_min == 0){
       motor_last_position = motor_pos[i];
       digitalWrite(motor_direction1_pins[i], HIGH);
       digitalWrite(motor_direction2_pins[i], LOW);
       analogWrite(motor_PWM_pins[i], 51);
       read_motor_encoder(i);
-      if (motor_pos[i] == motor_last_position) {motor_range_min[i] = motor_position[i];}}
-    while (motor_range_max[i] == 0) {
+      if (motor_pos[i] == motor_last_position) {read_min = motor_pos[i];}}
+    while (read_max == 0) {
       motor_last_position = motor_pos[i];
       digitalWrite(motor_direction1_pins[i], LOW);
       digitalWrite(motor_direction2_pins[i], HIGH);
       analogWrite(motor_PWM_pins[i], 51);
       read_motor_encoder(i);
-      if (motor_pos[i] == motor_last_position) {motor_range_max[i] = motor_position[i];}}
+      if (motor_pos[i] == motor_last_position) {read_max = motor_pos[i];}}
+    initial_offset = (read_min + read_max) / 2;
+    motor_range_min[i] = read_min - initial_offset;
+    motor_range_max[i] = read_max - initial_offset;
+    motor_pos[i] = motor_pos[i] - initial_offset;
     while (motor_pos[i] != 0) {drive_motors();}}
 }
 
@@ -185,7 +191,7 @@ void map_motor_encoders() {
   int pos = motor_pos[i];
   interrupts();
 
-  int mapped = map(pos, motor_range_min[i], motor_range_max[i], 0, 1023);
+  int mapped = map(pos, -750, 750, 0, 1023);
   switch(i){
     case(0):
       Joystick.setXAxis(mapped);
@@ -207,18 +213,18 @@ void map_motor_encoders() {
 // This function checks the current physical position of the motors and applies a torque back towards the 0 position.
 void drive_motors() {
   for (int i = 0; i < num_motors; i++) {
-    if (motor_pos[i] < 0) {
-      digitalWrite(motor_direction1_pins[i], HIGH);
+    if (abs(motor_pos[i]) < 10) {
+      digitalWrite(motor_direction1_pins[i], LOW);
       digitalWrite(motor_direction2_pins[i], LOW);
-      analogWrite(motor_PWM_pins[i], 51);}
-    if (motor_pos[i] > 0) {
+      analogWrite(motor_PWM_pins[i], 0);}
+    else if (motor_pos[i] < 0) {
       digitalWrite(motor_direction1_pins[i], LOW);
       digitalWrite(motor_direction2_pins[i], HIGH);
-      analogWrite(motor_PWM_pins[i], 51);}
+      analogWrite(motor_PWM_pins[i], 102);}
     else {
-      digitalWrite(motor_direction1_pins[i], LOW);
+      digitalWrite(motor_direction1_pins[i], HIGH);
       digitalWrite(motor_direction2_pins[i], LOW);
-      analogWrite(motor_PWM_pins[i], 0);}}
+      analogWrite(motor_PWM_pins[i], 102);}}
 }
 
 /* This function, much like `read_encoder()`, does the comparison between phase A and phase B (pA and pB respectively) to determine which direction the oncoder is being spun. Unlike the `read_encoder()` function it does not
