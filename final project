@@ -13,7 +13,7 @@ troubleshoot issues with motors and controllers and then install them
 /////////////////////////////links to libraries for reference/////////////////////////////
 
 https://github.com/mheironimus/arduinojoysticklibrary
-https://github.com/Chris--A/Keypad/blob/master/examples/CustomKeypad/CustomKeypad.ino
+https://github.com/Chris--A/Keypad/tree/master
 */
 
 /////////////////////////////Libraries/////////////////////////////
@@ -182,7 +182,7 @@ void read_motor_encoder(int i) {
   }
 }
 
-// This function runs at setup to determine the upper and lower physical bounds of each motor. I don't know if this works yet becuase every time I plug my motors controllers in, a catastrophe occurs.
+// This function runs at setup to determine the upper and lower physical bounds of each motor lever. I don't know if this works yet becuase every time I plug my motors controllers in, there are catastrophic consequences.
 void establish_motor_ranges() {
   int motor_last_position;
   int read_min = 0;
@@ -213,7 +213,7 @@ void establish_motor_ranges() {
   }
 }
 
-/* This function disables interrupts, stores `motor_pos` in a non-volatile, local variable `pos`, and then re-endables interrupts to prevent corruption. The `map()` function from the Joystick library does all the math to
+/* This function disables interrupts to prevent corruption, stores `motor_pos` in a non-volatile, local variable `pos`, and then re-endables interrupts. The `map()` function from the Joystick library does all the math to
 take the virtual upper and lower limits of the motor (defined at startup from physical bounds) and translate them into an analog range (0 and 1023 in this case). The `Joystick.set(whatever_axis)Axis()` function then takes
 the output from the `map()` function and sets the virtual axis to match the motor's physical position. */
 void map_motor_encoders() {
@@ -268,8 +268,8 @@ void read_rot_enc() {
   for (int i = 0; i < num_enc; i++) {
     int epA = !digitalRead(enc_phaseA_pins[i]);
     int epB = !digitalRead(enc_phaseB_pins[i]);
-    int rotate_left = i * 2 + 22;
-    int rotate_right = i * 2 + 23;
+    int rotate_left = i * 2 + 22; //offset to make sure the inputs don't overlap
+    int rotate_right = i * 2 + 23; //offset to make sure the inputs don't overlap
 
     if (epA != enc_last_state[i]) {
       if (epA == HIGH) {
@@ -288,7 +288,7 @@ void read_rot_enc() {
 void rot_enc_push_buttons() {
   for (int i = 0; i < num_enc; i++) {
     int current_state = !digitalRead(enc_button_pins[i]);
-    int current_button = i + 16;
+    int current_button = i + 16; //offset to make sure the inputs don't overlap
 
     Joystick.setButton(current_button, current_state);
   }
