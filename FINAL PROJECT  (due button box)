@@ -239,6 +239,9 @@ void map_motor_encoders() {
       case (4):
         Joystick.setRyAxis(mapped);
         break;
+      case (5):
+        Joystick.setRyAxis(mapped);
+        break;
     }
   }
 }
